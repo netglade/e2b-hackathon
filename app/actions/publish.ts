@@ -1,12 +1,11 @@
 'use server'
 
-import mcps, { McpServer } from '../api/state/mcps'
+import mcps, { McpServerState } from '../api/state/mcps'
 import { Duration, ms } from '@/lib/duration'
 import { Sandbox } from '@e2b/code-interpreter'
 import { kv } from '@vercel/kv'
 import { customAlphabet } from 'nanoid'
-import { v4 as uuidv4 } from 'uuid';
-
+import { v4 as uuidv4 } from 'uuid'
 
 const nanoid = customAlphabet('1234567890abcdef', 7)
 
@@ -43,10 +42,18 @@ export async function removeMcp(id: string) {
   mcps.servers = mcps.servers.filter((server) => server.id !== id)
 }
 
-export async function addMcp(server: McpServer) {
-  server.id = uuidv4()
-  server.state = 'loading'
-  mcps.servers.push(server)
-
-  
+export async function addMcp(server: {
+  name: string
+  command: string
+  envs: Record<string, string>
+}) {
+  const serverToAdd = {
+    name: server.name,
+    command: server.command,
+    envs: server.envs,
+    id: uuidv4(),
+    state: 'loading' as McpServerState,
+    url: undefined,
+  }
+  mcps.servers.push(serverToAdd)
 }

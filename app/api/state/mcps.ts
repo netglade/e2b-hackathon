@@ -3,7 +3,7 @@ export type McpServerState = 'loading' | 'running' | 'error'
 export interface McpServer {
   name: string
   command: string
-  apiKey: string | undefined
+  envs: Record<string, string>
   id: string
   url: string | undefined
   state: McpServerState
