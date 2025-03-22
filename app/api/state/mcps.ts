@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid'
+
 export type McpServerState = 'loading' | 'running' | 'error'
 
 export interface McpServer {
@@ -8,8 +10,6 @@ export interface McpServer {
   url: string | undefined
   state: McpServerState
 }
-
-
 
 export interface Mcps {
   servers: McpServer[]
@@ -24,7 +24,11 @@ const mcps = global.mcpsInstance || {
     {
       command:
         'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
+      envs: {},
       name: 'postgres',
+      state: 'loading',
+      id: uuidv4(),
+      url: undefined,
     },
   ],
 }
