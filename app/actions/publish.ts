@@ -62,7 +62,9 @@ export async function addMcp(server: {
 
 async function startServer(command: string, envs: Record<string, string>, id: string)
 {
+    console.log("Starting server...");
     let url = await runMCPInSandbox(command, envs);
+    console.log("URL:", url);
     const server = mcps.servers.find(server => server.id === id)
 
     if (server) {
