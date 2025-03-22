@@ -25,6 +25,13 @@ export interface ToolCall {
   id: string,
 }
 
+// Add interface for server type
+interface McpServer {
+  url: string;
+  command?: string;
+  name?: string;
+}
+
 export async function POST(req: Request) {
   const {
     messages,
@@ -71,8 +78,7 @@ export async function POST(req: Request) {
   //  return stream.toTextStreamResponse()
   let clients: any[] = []
   try {
-
-    const servers = mcps.servers
+    const servers = mcps.servers as McpServer[] // Type assertion here
 
     for (const server of servers) {
       const client = await experimental_createMCPClient({
@@ -148,7 +154,8 @@ export async function POST(req: Request) {
   } finally {
     for (const client of clients) {
       if (client) {
-      await client.close()
+        await client.close()
+      }
     }
   }
 }
