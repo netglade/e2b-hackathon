@@ -11,7 +11,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip'
+import { getMcps } from '@/app/actions/publish'
 import { LLMModelConfig } from '@/lib/models'
+import { useQuery } from '@tanstack/react-query'
 import { HammerIcon } from 'lucide-react'
 
 export function ChatSettings({
@@ -25,6 +27,12 @@ export function ChatSettings({
   languageModel: LLMModelConfig
   onLanguageModelChange: (model: LLMModelConfig) => void
 }) {
+  // Fetch tools list using React Query
+  const { data: mcps, isLoading } = useQuery({
+    queryKey: ['mcps'],
+    queryFn: () => getMcps(),
+  })
+
   return (
     <DropdownMenu>
       <TooltipProvider>
@@ -43,10 +51,31 @@ export function ChatSettings({
           <TooltipContent>Tool settings</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <DropdownMenuContent align="start">
-        <div className="flex flex-col gap-2 px-2 py-2">
-          <Label>Tools</Label>
-          ahoj ahoj
+      <DropdownMenuContent align="start" className="w-56">
+        <div className="flex flex-col gap-2 px-3 py-2">
+          <Label className="mb-1">Tools</Label>
+
+          {isLoading ? (
+            <div className="text-xs text-muted-foreground py-1">
+              Loading tools...
+            </div>
+          ) : (
+            <div className="max-h-40 overflow-y-auto">
+              {mcps?.servers && mcps.servers.length > 0 ? (
+                <ul className="space-y-1">
+                  {mcps.servers.map((server) => (
+                    <li key={server.id} className="text-sm py-1">
+                      {server.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-xs text-muted-foreground py-1">
+                  No tools available
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -16,6 +16,8 @@ declare global {
 
 const mcps = global.mcpsInstance || { servers: [{ name: 'calculator', id: uuidv4()}] }
 
+console.log(mcps)
+
 if (process.env.NODE_ENV !== 'production') {
   global.mcpsInstance = mcps
 }

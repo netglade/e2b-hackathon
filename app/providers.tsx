@@ -11,7 +11,7 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_POSTHOG) {
     person_profiles: 'identified_only',
     session_recording: {
       recordCrossOriginIframes: true,
-    }
+    },
   })
 }
 
@@ -26,3 +26,24 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>
 }
+
+// export function QueryProvider({ children }: { children: React.ReactNode }) {
+//   'use client'
+
+//   // Create a client
+//   const [queryClient] = useState(
+//     () =>
+//       new QueryClient({
+//         defaultOptions: {
+//           queries: {
+//             staleTime: 60 * 1000, // 1 minute
+//             // You can customize default options here
+//           },
+//         },
+//       }),
+//   )
+
+//   return (
+//     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+//   )
+// }

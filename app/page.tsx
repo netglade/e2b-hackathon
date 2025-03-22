@@ -18,8 +18,23 @@ import { DeepPartial } from 'ai'
 import { usePostHog } from 'posthog-js/react'
 import { SetStateAction, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
+import { QueryProvider } from './providers'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 export default function Home() {
+
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000, // 1 minute
+            // You can customize default options here
+          },
+        },
+      }),
+  )
+
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
   const [files, setFiles] = useState<File[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<'auto' | TemplateId>(
@@ -264,48 +279,50 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen max-h-screen">
-      {supabase && (
-        <AuthDialog
-          open={isAuthDialogOpen}
-          setOpen={setAuthDialog}
-          view={authView}
-          supabase={supabase}
-        />
-      )}
-      <div className="grid w-full md:grid-cols-2">
-        <div
-          className={`flex flex-col w-full max-h-full max-w-[800px] mx-auto px-4 overflow-auto ${fragment ? 'col-span-1' : 'col-span-2'}`}
-        >
-          <NavBar
-            session={session}
-            showLogin={() => setAuthDialog(true)}
-            signOut={logout}
-            onSocialClick={handleSocialClick}
-            onClear={handleClearChat}
-            canClear={messages.length > 0}
-            canUndo={messages.length > 1 && !isLoading}
-            onUndo={handleUndo}
+    <QueryClientProvider client={queryClient}>
+      <main className="flex min-h-screen max-h-screen">
+        {supabase && (
+          <AuthDialog
+            open={isAuthDialogOpen}
+            setOpen={setAuthDialog}
+            view={authView}
+            supabase={supabase}
           />
-          <Chat
-            messages={messages}
-            isLoading={isLoading}
-            setCurrentPreview={setCurrentPreview}
-          />
-          <ChatInput
-            retry={retry}
-            isErrored={error !== undefined}
-            isLoading={isLoading}
-            isRateLimited={isRateLimited}
-            stop={stop}
-            input={chatInput}
-            handleInputChange={handleSaveInputChange}
-            handleSubmit={handleSubmitAuth}
-            isMultiModal={currentModel?.multiModal || false}
-            files={files}
-            handleFileChange={handleFileChange}
+        )}
+        <div className="grid w-full md:grid-cols-2">
+          <div
+            className={`flex flex-col w-full max-h-full max-w-[800px] mx-auto px-4 overflow-auto ${fragment ? 'col-span-1' : 'col-span-2'}`}
           >
-            {/* <ChatPicker
+            <NavBar
+              session={session}
+              showLogin={() => setAuthDialog(true)}
+              signOut={logout}
+              onSocialClick={handleSocialClick}
+              onClear={handleClearChat}
+              canClear={messages.length > 0}
+              canUndo={messages.length > 1 && !isLoading}
+              onUndo={handleUndo}
+            />
+            <Chat
+              messages={messages}
+              isLoading={isLoading}
+              setCurrentPreview={setCurrentPreview}
+            />
+            <ChatInput
+              retry={retry}
+              isErrored={error !== undefined}
+              isLoading={isLoading}
+              isRateLimited={isRateLimited}
+              stop={stop}
+              input={chatInput}
+              handleInputChange={handleSaveInputChange}
+              handleSubmit={handleSubmitAuth}
+              isMultiModal={currentModel?.multiModal || false}
+              files={files}
+              handleFileChange={handleFileChange}
+            >
+              {
+                /* <ChatPicker
               templates={templates}
               selectedTemplate={selectedTemplate}
               onSelectedTemplateChange={setSelectedTemplate}
@@ -313,15 +330,18 @@ export default function Home() {
               languageModel={languageModel}
               onLanguageModelChange={handleLanguageModelChange}
             />*/
-            <ChatSettings
-              languageModel={languageModel}
-              onLanguageModelChange={handleLanguageModelChange}
-              apiKeyConfigurable={!process.env.NEXT_PUBLIC_NO_API_KEY_INPUT}
-              baseURLConfigurable={!process.env.NEXT_PUBLIC_NO_BASE_URL_INPUT}
-            />}
-          </ChatInput>
-        </div>
-        {/* <Preview
+                <ChatSettings
+                  languageModel={languageModel}
+                  onLanguageModelChange={handleLanguageModelChange}
+                  apiKeyConfigurable={!process.env.NEXT_PUBLIC_NO_API_KEY_INPUT}
+                  baseURLConfigurable={
+                    !process.env.NEXT_PUBLIC_NO_BASE_URL_INPUT
+                  }
+                />
+              }
+            </ChatInput>
+          </div>
+          {/* <Preview
           apiKey={apiKey}
           selectedTab={currentTab}
           onSelectedTabChange={setCurrentTab}
@@ -331,7 +351,8 @@ export default function Home() {
           result={result as ExecutionResult}
           onClose={() => setFragment(undefined)}
         /> */}
-      </div>
-    </main>
+        </div>
+      </main>
+    </QueryClientProvider>
   )
 }
