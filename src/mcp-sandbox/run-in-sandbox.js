@@ -16,20 +16,40 @@ async function main() {
 
     // Install required dependencies in the sandbox
     console.log("Installing dependencies...");
-    await sandbox.commands.run("npm install @modelcontextprotocol/sdk@1.7.0 @modelcontextprotocol/inspector zod dotenv", {
-      timeoutMs: 120000,
-    });
 
     // Write the demo server code to a file in the sandbox
     console.log("Writing server code to sandbox...");
     await sandbox.files.write("/app/demo-server.js", demoServerCode);
 
+    // Check Node.js version
+    console.log("Checking Node.js version...");
+    const versionProcess = await sandbox.commands.run("node --version");
+    console.log("Node.js version:", versionProcess.stdout);
+
+    // Create package.json to ensure ES modules are enabled
+    await sandbox.files.write("/app/package.json", JSON.stringify({
+      "type": "module",
+      "dependencies": {
+        "@e2b/code-interpreter": "^1.0.4",
+        "@modelcontextprotocol/sdk": "^1.7.0",
+        "dotenv": "^16.4.7",
+        "express": "^5.0.1",
+        "zod": "^3.22.4"
+      },
+    }));
+
+    const installProcess = await sandbox.commands.run("cd /app && npm i", {
+      timeoutMs: 120000,
+    });
+    console.log("Install process output:", installProcess.stdout);
+
     // Run the demo server in background
     console.log("Starting server...");
-    const process = await sandbox.commands.run("npx @modelcontextprotocol/inspector node /app/demo-server.js", { background: true });
+    
+    const process = await sandbox.commands.run("node /app/demo-server.js", { background: true });
 
     // Get the host for port 3000 (default port for the inspector)
-    const host = sandbox.getHost(5173);
+    const host = sandbox.getHost(3001);
     const url = `https://${host}`;
     console.log("Server started at:", url);
 
