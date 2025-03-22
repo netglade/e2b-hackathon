@@ -99,8 +99,8 @@ try {
     //});
 
     const toolSetOne = await clientOne.tools();
-    //const toolSetTwo = await clientTwo.tools();
-    //const toolSetThree = await clientThree.tools();
+    console.log('Tools fetched:', toolSetOne);
+    
     const tools = {
       ...toolSetOne,
       //...toolSetTwo,
@@ -110,10 +110,12 @@ try {
     const response = await generateText({
       model: openai('gpt-4o'),
       tools,
-      messages: messages
+      messages: messages,
+      maxSteps: 10,
     });
 
-    console.log(response);
+    console.log(response.text);
+    console.log(response.toolCalls);
     return new Response(JSON.stringify(response), {
       headers: {
         'Content-Type': 'application/json',
