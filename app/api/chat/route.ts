@@ -2,6 +2,7 @@ import { Duration } from '@/lib/duration'
 import { openai } from '@ai-sdk/openai'
 import { CoreMessage, experimental_createMCPClient, generateText } from 'ai'
 import { Experimental_StdioMCPTransport } from 'ai/mcp-stdio'
+import mcps from '../state/mcps'
 
 export const maxDuration = 60
 
@@ -68,15 +69,28 @@ export async function POST(req: Request) {
   //  })
   //
   //  return stream.toTextStreamResponse()
-  let clientOne: any
+  let clients: any[] = []
   try {
 
-    const clientOne = await experimental_createMCPClient({
-      transport: {
-        type: 'sse',
-        url: 'https://3000-iccj2mdne89kx7p0drf2c-ae3f52e0.e2b.dev/sse',
-      },
-    });
+    const servers = mcps.servers
+
+    for (const server of servers) {
+      const client = await experimental_createMCPClient({
+        transport: {
+          type: 'sse',
+          url: server.url,
+        },
+      });
+
+      clients.push(client)
+    }
+    
+    // const clientOne = await experimental_createMCPClient({
+    //   transport: {
+    //     type: 'sse',
+    //     url: 'https://3000-iccj2mdne89kx7p0drf2c-ae3f52e0.e2b.dev/sse',
+    //   },
+    // });
 
     // Similarly to the stdio example, you can pass in your own custom transport as long as it implements the `MCPTransport` interface:
     //const transport = new MyCustomTransport({
@@ -86,13 +100,14 @@ export async function POST(req: Request) {
     //  transport,
     //});
 
-    const toolSetOne = await clientOne.tools()
-    console.log('Tools fetched:', toolSetOne)
-
-    const tools = {
-      ...toolSetOne,
-      //...toolSetTwo,
-      //...toolSetThree, // note: this approach causes subsequent tool sets to override tools with the same name
+    let tools = {}
+    for (const client of clients) {
+      const toolSet = await client.tools()
+      console.log('Tools fetched:', toolSet)
+      tools = {
+        ...tools,
+        ...toolSet,
+      }
     }
 
     const response = await generateText({
@@ -131,8 +146,9 @@ export async function POST(req: Request) {
       },
     )
   } finally {
-    if (clientOne) {
-      await clientOne.close()
+    for (const client of clients) {
+      if (client) {
+      await client.close()
     }
   }
 }
