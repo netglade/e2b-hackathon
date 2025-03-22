@@ -1,5 +1,6 @@
 'use server'
 
+import mcps from '../api/state/mcps'
 import { Duration, ms } from '@/lib/duration'
 import { Sandbox } from '@e2b/code-interpreter'
 import { kv } from '@vercel/kv'
@@ -30,4 +31,10 @@ export async function publish(
   return {
     url,
   }
+}
+
+export async function getMcps() {
+  'use server'
+  mcps.text = mcps.text + 'sdffsd'
+  return mcps.text
 }

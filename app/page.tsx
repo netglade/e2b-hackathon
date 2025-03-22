@@ -1,22 +1,19 @@
 'use client'
 
+import { getMcps } from './actions/publish'
 import { AuthDialog } from '@/components/auth-dialog'
 import { Chat } from '@/components/chat'
 import { ChatInput } from '@/components/chat-input'
-import { ChatPicker } from '@/components/chat-picker'
-import { ChatSettings } from '@/components/chat-settings'
 import { NavBar } from '@/components/navbar'
-import { Preview } from '@/components/preview'
 import { AuthViewType, useAuth } from '@/lib/auth'
 import { Message, toAISDKMessages, toMessageImage } from '@/lib/messages'
 import { LLMModelConfig } from '@/lib/models'
 import modelsList from '@/lib/models.json'
-import { FragmentSchema, fragmentSchema as schema } from '@/lib/schema'
+import { FragmentSchema } from '@/lib/schema'
 import { supabase } from '@/lib/supabase'
 import templates, { TemplateId } from '@/lib/templates'
 import { ExecutionResult } from '@/lib/types'
 import { DeepPartial } from 'ai'
-import { experimental_useObject as useObject } from 'ai/react'
 import { usePostHog } from 'posthog-js/react'
 import { SetStateAction, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
@@ -62,64 +59,67 @@ export default function Home() {
       : { [selectedTemplate]: templates[selectedTemplate] }
   const lastMessage = messages[messages.length - 1]
 
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(undefined)
+  const [abortController, setAbortController] = useState(
+    null as AbortController | null,
+  )
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(undefined);
-  const [abortController, setAbortController] = useState(null as AbortController | null);
-
-  const submit = async({messages} : {messages: Message[]}) => {
+  const submit = async ({ messages }: { messages: Message[] }) => {
     console.log(messages)
-    setIsLoading(true);
-    setError(undefined);
+    setIsLoading(true)
+    setError(undefined)
 
-    const controller = new AbortController();
-    setAbortController(controller);
-    
+    const controller = new AbortController()
+    setAbortController(controller)
+
     try {
+      console.log(await getMcps())
 
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      body: JSON.stringify({ messages }),
-      signal: controller.signal,
-    })
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({ messages }),
+        signal: controller.signal,
+      })
 
-    const data = await response.json()
+      const data = await response.json()
 
-    console.log(data)
+      console.log(data)
 
-    setResult(result)
-    setCurrentPreview({ fragment, result })
-    addMessage({role: 'assistant', toolCalls: data.toolCalls, content: [{type: 'text', text: data.text}] })
-    // setCurrentTab('fragment')
-    // setIsPreviewLoading(false)
-
-    } catch (err : any) {
+      setResult(result)
+      setCurrentPreview({ fragment, result })
+      addMessage({
+        role: 'assistant',
+        toolCalls: data.toolCalls,
+        content: [{ type: 'text', text: data.text }],
+      })
+      // setCurrentTab('fragment')
+      // setIsPreviewLoading(false)
+    } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log('Fetch operation was aborted');
+        console.log('Fetch operation was aborted')
       } else {
-        console.error('Error submitting form:', err);
-        setError(err.message || 'An error occurred while submitting the form');
+        console.error('Error submitting form:', err)
+        setError(err.message || 'An error occurred while submitting the form')
       }
     } finally {
-      setAbortController(null);
-      setIsLoading(false);
-  }
-  
-    
+      setAbortController(null)
+      setIsLoading(false)
+    }
   }
 
   const stop = () => {
     if (abortController) {
       // Abort the ongoing fetch
-      abortController.abort();
-      
+      abortController.abort()
+
       // You might want to reset states here as well
-      setIsLoading(false);
-      
+      setIsLoading(false)
+
       // Optional: provide user feedback
-      console.log('Request cancelled by user');
+      console.log('Request cancelled by user')
     }
-  };
+  }
 
   // useEffect(() => {
   //   if (object) {

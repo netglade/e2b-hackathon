@@ -46,7 +46,9 @@ export function NavBar({
   return (
     <nav className="w-full flex bg-background py-4">
       <div className="flex flex-1 items-center">
-        <h1 className="whitespace-pre">💬🛠️ Chat with tools</h1>
+        <h1 className="whitespace-pre text-2xl font-bold">
+          💬🛠️ Chat with tools
+        </h1>
       </div>
       <div className="flex items-center gap-1 md:gap-4">
         {/* <TooltipProvider>
