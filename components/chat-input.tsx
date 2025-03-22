@@ -175,7 +175,6 @@ export function ChatInput({
         </div>
       )}
       <div className="relative">
-        <RepoBanner className="absolute bottom-full inset-x-2 translate-y-1 z-0 pb-2" />
         <div className={`shadow-md rounded-2xl relative z-10 bg-background border ${
           dragActive 
             ? 'before:absolute before:inset-0 before:rounded-2xl before:border-2 before:border-dashed before:border-primary' 
@@ -188,7 +187,7 @@ export function ChatInput({
             maxRows={5}
             className="text-normal px-3 resize-none ring-0 bg-inherit w-full m-0 outline-none"
             required={true}
-            placeholder="Describe your app..."
+            placeholder="Chat with your tools..."
             disabled={isErrored}
             value={input}
             onChange={handleInputChange}
@@ -205,7 +204,7 @@ export function ChatInput({
               onChange={handleFileInput}
             />
             <div className="flex items-center flex-1 gap-2">
-              <TooltipProvider>
+              {/* <TooltipProvider>
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <Button
@@ -225,7 +224,7 @@ export function ChatInput({
                   <TooltipContent>Add attachments</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              {files.length > 0 && filePreview}
+              {files.length > 0 && filePreview} */}
             </div>
             <div>
               {!isLoading ? (
@@ -270,10 +269,7 @@ export function ChatInput({
         </div>
       </div>
       <p className="text-xs text-muted-foreground mt-2 text-center">
-        Fragments is an open-source project made by{' '}
-        <a href="https://e2b.dev" target="_blank" className="text-[#ff8800]">
-          ✶ E2B
-        </a>
+        Assistant uses the MCP protocol to connect to tools
       </p>
     </form>
   )

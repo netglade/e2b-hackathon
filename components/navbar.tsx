@@ -23,7 +23,6 @@ import {
 } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
 import { ArrowRight, LogOut, Trash, Undo } from 'lucide-react'
-import Link from 'next/link'
 
 export function NavBar({
   session,
@@ -47,20 +46,10 @@ export function NavBar({
   return (
     <nav className="w-full flex bg-background py-4">
       <div className="flex flex-1 items-center">
-        <Link href="/" className="flex items-center gap-2" target="_blank">
-          <Logo width={24} height={24} />
-          <h1 className="whitespace-pre">Fragments by </h1>
-        </Link>
-        <Link
-          href="https://e2b.dev"
-          className="underline decoration-[rgba(229,123,0,.3)] decoration-2 text-[#ff8800]"
-          target="_blank"
-        >
-          E2B
-        </Link>
+        <h1 className="whitespace-pre">💬🛠️ Chat with tools</h1>
       </div>
       <div className="flex items-center gap-1 md:gap-4">
-        <TooltipProvider>
+        {/* <TooltipProvider>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Button
@@ -74,7 +63,7 @@ export function NavBar({
             </TooltipTrigger>
             <TooltipContent>Undo</TooltipContent>
           </Tooltip>
-        </TooltipProvider>
+        </TooltipProvider> */}
         <TooltipProvider>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -90,7 +79,7 @@ export function NavBar({
             <TooltipContent>Clear chat</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <TooltipProvider>
+        {/* <TooltipProvider>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <ThemeToggle />
@@ -158,7 +147,7 @@ export function NavBar({
             Sign in
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-        )}
+        )} */}
       </div>
     </nav>
   )

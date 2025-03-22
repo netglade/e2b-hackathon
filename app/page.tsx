@@ -304,7 +304,7 @@ export default function Home() {
             files={files}
             handleFileChange={handleFileChange}
           >
-            <ChatPicker
+            {/* <ChatPicker
               templates={templates}
               selectedTemplate={selectedTemplate}
               onSelectedTemplateChange={setSelectedTemplate}
@@ -317,7 +317,7 @@ export default function Home() {
               onLanguageModelChange={handleLanguageModelChange}
               apiKeyConfigurable={!process.env.NEXT_PUBLIC_NO_API_KEY_INPUT}
               baseURLConfigurable={!process.env.NEXT_PUBLIC_NO_BASE_URL_INPUT}
-            />
+            /> */}
           </ChatInput>
         </div>
         {/* <Preview
