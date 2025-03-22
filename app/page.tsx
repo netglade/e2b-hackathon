@@ -89,7 +89,7 @@ export default function Home() {
 
     setResult(result)
     setCurrentPreview({ fragment, result })
-    addMessage({role: 'assistant', content: [{type: 'text', text: data.text}] })
+    addMessage({role: 'assistant', toolCalls: data.toolCalls, content: [{type: 'text', text: data.text}] })
     // setCurrentTab('fragment')
     // setIsPreviewLoading(false)
 

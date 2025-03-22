@@ -1,3 +1,4 @@
+import { ToolCall } from '@/app/api/chat/route'
 import { FragmentSchema } from './schema'
 import { ExecutionResult } from './types'
 import { DeepPartial } from 'ai'
@@ -21,7 +22,8 @@ export type Message = {
   role: 'assistant' | 'user'
   content: Array<MessageText | MessageCode | MessageImage>
   object?: DeepPartial<FragmentSchema>
-  result?: ExecutionResult
+  result?: ExecutionResult,
+  toolCalls?: ToolCall[]
 }
 
 export function toAISDKMessages(messages: Message[]) {

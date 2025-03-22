@@ -1,6 +1,4 @@
 import { Duration } from '@/lib/duration'
-import { LLMModel, LLMModelConfig } from '@/lib/models'
-import { Templates } from '@/lib/templates'
 import { openai } from '@ai-sdk/openai'
 import { CoreMessage, experimental_createMCPClient, generateText } from 'ai'
 import { Experimental_StdioMCPTransport } from 'ai/mcp-stdio'
@@ -13,6 +11,18 @@ const rateLimitMaxRequests = process.env.RATE_LIMIT_MAX_REQUESTS
 const ratelimitWindow = process.env.RATE_LIMIT_WINDOW
   ? (process.env.RATE_LIMIT_WINDOW as Duration)
   : '1d'
+
+export interface ToolCallArgument {
+  name: string
+  value: string
+}
+
+export interface ToolCall {
+  name: string
+  arguments: ToolCallArgument[]
+  result: string,
+  id: string,
+}
 
 export async function POST(req: Request) {
   const {
@@ -85,9 +95,9 @@ export async function POST(req: Request) {
     //  transport,
     //});
 
-    const toolSetOne = await clientOne.tools();
-    console.log('Tools fetched:', toolSetOne);
-    
+    const toolSetOne = await clientOne.tools()
+    console.log('Tools fetched:', toolSetOne)
+
     const tools = {
       ...toolSetOne,
       //...toolSetTwo,
@@ -103,13 +113,21 @@ export async function POST(req: Request) {
 
     console.log(JSON.stringify(response.response.messages))
     console.log(response.text)
-    return new Response(JSON.stringify({
-      text: response.text,
-    }), {
-      headers: {
-        'Content-Type': 'application/json',
+
+    const toolCalls = extractToolCalls(response.response.messages)
+    console.log(JSON.stringify(toolCalls))
+
+    return new Response(
+      JSON.stringify({
+        text: response.text,
+        toolCalls,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    })
+    )
   } catch (error) {
     console.error(error)
     return new Response(
@@ -126,4 +144,61 @@ export async function POST(req: Request) {
       await clientOne.close()
     }
   }
+}
+
+function extractToolCalls(conversation: any[]): ToolCall[] {
+  const toolCalls: ToolCall[] = []
+
+  // Iterate through the conversation
+  for (let i = 0; i < conversation.length - 1; i++) {
+    const currentMessage = conversation[i]
+
+    // Check if this is an assistant message with tool calls
+    if (currentMessage.role === 'assistant' && currentMessage.content) {
+      // Find the tool-call item in the content array (there can only be one per message)
+      const toolCallContent = currentMessage.content.find(
+        (item: any) => item.type === 'tool-call',
+      )
+
+      // Process the tool call if found
+      if (toolCallContent) {
+        const toolCallId = toolCallContent.toolCallId
+        const toolName = toolCallContent.toolName
+        const args = toolCallContent.args
+
+        // Look for the corresponding tool response
+        const nextMessage = conversation[i + 1]
+        if (nextMessage.role === 'tool' && nextMessage.content) {
+          // Find the matching tool result
+          const toolResult = nextMessage.content.find(
+            (item: any) =>
+              item.type === 'tool-result' && item.toolCallId === toolCallId,
+          )
+
+          if (toolResult) {
+            // Extract the result text
+            const resultText = toolResult.result.content?.[0]?.text || ''
+
+            // Convert args object to ToolCallArgument array
+            const argsArray: ToolCallArgument[] = Object.entries(args).map(
+              ([name, value]) => ({
+                name,
+                value: String(value),
+              }),
+            )
+
+            // Add the tool call to our collection
+            toolCalls.push({
+              name: toolName,
+              arguments: argsArray,
+              result: resultText,
+              id: toolCallId,
+            })
+          }
+        }
+      }
+    }
+  }
+
+  return toolCalls
 }
