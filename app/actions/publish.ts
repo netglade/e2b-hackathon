@@ -45,5 +45,8 @@ export async function removeMcp(id: string) {
 
 export async function addMcp(server: McpServer) {
   server.id = uuidv4()
+  server.state = 'loading'
   mcps.servers.push(server)
+
+  
 }
