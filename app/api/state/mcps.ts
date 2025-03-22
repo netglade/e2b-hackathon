@@ -1,10 +1,15 @@
+export type McpServerState = 'loading' | 'running' | 'error'
+
 export interface McpServer {
   name: string
   command: string
   apiKey: string | undefined
   id: string
   url: string | undefined
+  state: McpServerState
 }
+
+
 
 export interface Mcps {
   servers: McpServer[]
