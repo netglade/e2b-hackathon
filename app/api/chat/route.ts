@@ -81,14 +81,17 @@ export async function POST(req: Request) {
     const servers = mcps.servers as McpServer[] // Type assertion here
 
     for (const server of servers) {
-      const client = await experimental_createMCPClient({
-        transport: {
-          type: 'sse',
-          url: server.url,
-        },
-      });
 
-      clients.push(client)
+      if (server.url) {
+        const client = await experimental_createMCPClient({
+          transport: {
+            type: 'sse',
+            url: server.url,
+          },
+        });
+
+        clients.push(client)
+      }
     }
     
     // const clientOne = await experimental_createMCPClient({
