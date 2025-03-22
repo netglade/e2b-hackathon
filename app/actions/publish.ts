@@ -5,6 +5,8 @@ import { Duration, ms } from '@/lib/duration'
 import { Sandbox } from '@e2b/code-interpreter'
 import { kv } from '@vercel/kv'
 import { customAlphabet } from 'nanoid'
+import { v4 as uuidv4 } from 'uuid';
+
 
 const nanoid = customAlphabet('1234567890abcdef', 7)
 
@@ -34,7 +36,13 @@ export async function publish(
 }
 
 export async function getMcps() {
-  'use server'
-  mcps.text = mcps.text + 'sdffsd'
-  return mcps.text
+  return mcps
+}
+
+export async function removeMcp(id: string) {
+  mcps.servers = mcps.servers.filter((server) => server.id !== id)
+}
+
+export async function addMcp(name: string) {
+  mcps.servers.push({ name, id: uuidv4() })
 }
