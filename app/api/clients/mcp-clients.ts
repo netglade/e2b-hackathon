@@ -11,7 +11,7 @@ export async function initializeAndUseMCPClient() {
     // Initialize an MCP client to connect to a `stdio` MCP server:
     const transport = new Experimental_StdioMCPTransport({
       command: 'node',
-      args: ['../servers/stdio/calculator.js'],
+      args: ['./api/servers/stdio/calculator.js'],
     });
     clientOne = await experimental_createMCPClient({
       transport,

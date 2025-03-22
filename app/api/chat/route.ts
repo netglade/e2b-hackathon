@@ -76,7 +76,7 @@ try {
     // Initialize an MCP client to connect to a `stdio` MCP server:
     const transport = new Experimental_StdioMCPTransport({
       command: 'node',
-      args: ['e2b-hackathon/app/api/servers/stdio/calculator.js'],
+      args: ['./app/api/servers/stdio/calculator.js'],
     });
     clientOne = await experimental_createMCPClient({
       transport,
@@ -113,12 +113,23 @@ try {
       messages: messages
     });
 
-    console.log(response.text);
-    return response;
+    console.log(response);
+    return new Response(JSON.stringify(response), {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     console.error(error);
-    throw error;
+    return new Response(JSON.stringify({ error: 'Failed to process request' }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } finally {
-    await Promise.all([clientOne.close()]);
+    if (clientOne) {
+      await clientOne.close();
+    }
   }
 }
