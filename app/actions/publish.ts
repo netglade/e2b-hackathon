@@ -79,7 +79,7 @@ async function startServer(command: string, envs: Record<string, string>, id: st
     const server = mcps.servers.find(server => server.id === id)
 
     if (server) {
-      server.url = url;
+      server.url = url + '/sse';
       server.state = 'running' as McpServerState;
     }
     
