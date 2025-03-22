@@ -15,17 +15,19 @@ import {
 } from './ui/dropdown-menu'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
+import { Textarea } from './ui/textarea'
+// Import Textarea component
+import { addMcp, getMcps, removeMcp } from '@/app/actions/publish'
+import { LLMModelConfig } from '@/lib/models'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { HammerIcon, PlusIcon, TrashIcon } from 'lucide-react'
+import { useState } from 'react'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip'
-import { addMcp, getMcps, removeMcp } from '@/app/actions/publish'
-import { LLMModelConfig } from '@/lib/models'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { HammerIcon, PlusIcon, TrashIcon } from 'lucide-react'
-import { useState } from 'react'
 
 export function ChatSettings({
   apiKeyConfigurable,
@@ -196,6 +198,7 @@ export function ChatSettings({
             <>
               <DialogHeader>
                 <DialogTitle>{selectedTool.name}</DialogTitle>
+                <DialogDescription>MCP tool</DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4 py-4">
@@ -221,10 +224,14 @@ export function ChatSettings({
 
                 <div>
                   <Label>Command</Label>
-                  <Input
+                  <Textarea
                     value={selectedTool.command}
                     readOnly
-                    className="mt-1 bg-muted"
+                    className="mt-1 bg-muted font-mono text-sm resize-none"
+                    rows={Math.min(
+                      8,
+                      (selectedTool.command.match(/\n/g) || []).length + 1,
+                    )}
                   />
                 </div>
 
@@ -292,12 +299,16 @@ export function ChatSettings({
 
                   <div>
                     <Label htmlFor="toolCommand">Command</Label>
-                    <Input
+                    <Textarea
                       id="toolCommand"
                       value={newToolCommand}
                       onChange={(e) => setNewToolCommand(e.target.value)}
                       placeholder="Enter tool command"
-                      className="mt-1"
+                      className="mt-1 font-mono text-sm resize-none"
+                      rows={Math.min(
+                        8,
+                        (newToolCommand.match(/\n/g) || []).length + 1,
+                      )}
                       required
                     />
                   </div>
@@ -333,13 +344,13 @@ export function ChatSettings({
 
                     <div className="flex gap-2 mt-2">
                       <Input
-                        placeholder="ENV_KEY"
+                        placeholder="Key"
                         value={newEnvKey}
                         onChange={(e) => setNewEnvKey(e.target.value)}
                         className="text-xs font-mono"
                       />
                       <Input
-                        placeholder="value"
+                        placeholder="Value"
                         value={newEnvValue}
                         onChange={(e) => setNewEnvValue(e.target.value)}
                         className="text-xs"
