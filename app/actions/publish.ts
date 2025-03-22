@@ -2,11 +2,10 @@
 
 import mcps, { McpServer, McpServerState } from '../api/state/mcps'
 import { Duration, ms } from '@/lib/duration'
-import { Sandbox } from '@e2b/code-interpreter'
 import { kv } from '@vercel/kv'
 import { customAlphabet } from 'nanoid'
 import { v4 as uuidv4 } from 'uuid'
-import { runMCPInSandbox } from '@/src/mcp-sandbox/run-in-sandbox'
+import { Sandbox } from "@e2b/code-interpreter";
 
 const nanoid = customAlphabet('1234567890abcdef', 7)
 
@@ -71,4 +70,34 @@ async function startServer(command: string, envs: Record<string, string>, id: st
       server.state = 'running' as McpServerState;
     }
     
+}
+
+async function runMCPInSandbox(mcpCommand: string, envs: Record<string, string>) {
+  // Create a new sandbox with Node.js runtime
+  console.log("Creating sandbox...");
+  const sandbox = await Sandbox.create({
+    template: "node",
+    timeoutMs: 1000 * 60 * 10,
+  });
+
+  const host = sandbox.getHost(3000);
+  const url = `https://${host}`;
+  console.log("Server started at:", url);
+
+  console.log("Starting server...");
+  const process = await sandbox.commands.run(
+    `npx -y supergateway --base-url ${url} --port 3000 --stdio "${mcpCommand}"`,
+    {
+      envs: envs,
+      background: true,
+      onStdout: (data) => {
+        console.log(data);
+      },
+      onStderr: (data) => {
+        console.log(data);
+      }
+    }
+  );
+
+  return url;
 }
