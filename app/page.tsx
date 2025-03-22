@@ -7,7 +7,6 @@ import { ChatPicker } from '@/components/chat-picker'
 import { ChatSettings } from '@/components/chat-settings'
 import { NavBar } from '@/components/navbar'
 import { Preview } from '@/components/preview'
-import { RepoBanner } from '@/components/repo-banner'
 import { AuthViewType, useAuth } from '@/lib/auth'
 import { Message, toAISDKMessages, toMessageImage } from '@/lib/messages'
 import { LLMModelConfig } from '@/lib/models'
@@ -19,7 +18,7 @@ import { ExecutionResult } from '@/lib/types'
 import { DeepPartial } from 'ai'
 import { experimental_useObject as useObject } from 'ai/react'
 import { usePostHog } from 'posthog-js/react'
-import { SetStateAction, useEffect, useState } from 'react'
+import { SetStateAction, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 
 export default function Home() {
@@ -63,73 +62,89 @@ export default function Home() {
       : { [selectedTemplate]: templates[selectedTemplate] }
   const lastMessage = messages[messages.length - 1]
 
-  const { object, submit, isLoading, stop, error } = useObject({
-    api: '/api/chat',
-    schema,
-    onError: (error) => {
-      if (error.message.includes('request limit')) {
-        setIsRateLimited(true)
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(undefined);
+  const [abortController, setAbortController] = useState(null as AbortController | null);
+
+  const submit = async({messages} : {messages: Message[]}) => {
+    console.log(messages)
+    setIsLoading(true);
+    setError(undefined);
+
+    const controller = new AbortController();
+    setAbortController(controller);
+    
+    try {
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ messages }),
+      signal: controller.signal,
+    })
+
+    const data = await response.json()
+
+    console.log(data)
+
+    setResult(result)
+    setCurrentPreview({ fragment, result })
+    setMessage({role: 'assistant', content: [{type: 'text', text: data.text}] })
+    // setCurrentTab('fragment')
+    // setIsPreviewLoading(false)
+
+    } catch (err : any) {
+      if (err.name === 'AbortError') {
+        console.log('Fetch operation was aborted');
+      } else {
+        console.error('Error submitting form:', err);
+        setError(err.message || 'An error occurred while submitting the form');
       }
-    },
-    onFinish: async ({ object: fragment, error }) => {
-      if (!error) {
-        // send it to /api/sandbox
-        console.log('fragment', fragment)
-        setIsPreviewLoading(true)
-        posthog.capture('fragment_generated', {
-          template: fragment?.template,
-        })
+    } finally {
+      setAbortController(null);
+      setIsLoading(false);
+  }
+  
+    
+  }
 
-        const response = await fetch('/api/sandbox', {
-          method: 'POST',
-          body: JSON.stringify({
-            fragment,
-            userID: session?.user?.id,
-            apiKey,
-          }),
-        })
-
-        const result = await response.json()
-        console.log('result', result)
-        posthog.capture('sandbox_created', { url: result.url })
-
-        setResult(result)
-        setCurrentPreview({ fragment, result })
-        setMessage({ result })
-        setCurrentTab('fragment')
-        setIsPreviewLoading(false)
-      }
-    },
-  })
-
-  useEffect(() => {
-    if (object) {
-      setFragment(object)
-      const content: Message['content'] = [
-        { type: 'text', text: object.commentary || '' },
-        { type: 'code', text: object.code || '' },
-      ]
-
-      if (!lastMessage || lastMessage.role !== 'assistant') {
-        addMessage({
-          role: 'assistant',
-          content,
-          object,
-        })
-      }
-
-      if (lastMessage && lastMessage.role === 'assistant') {
-        setMessage({
-          content,
-          object,
-        })
-      }
+  const stop = () => {
+    if (abortController) {
+      // Abort the ongoing fetch
+      abortController.abort();
+      
+      // You might want to reset states here as well
+      setIsLoading(false);
+      
+      // Optional: provide user feedback
+      console.log('Request cancelled by user');
     }
-  }, [object])
+  };
 
-  useEffect(() => {
-    if (error) stop()
-  }, [error])
+  // useEffect(() => {
+  //   if (object) {
+  //     setFragment(object)
+  //     const content: Message['content'] = [
+  //       { type: 'text', text: object.commentary || '' },
+  //       { type: 'code', text: object.code || '' },
+  //     ]
+
+  //     if (!lastMessage || lastMessage.role !== 'assistant') {
+  //       addMessage({
+  //         role: 'assistant',
+  //         content,
+  //         object,
+  //       })
+  //     }
+
+  //     if (lastMessage && lastMessage.role === 'assistant') {
+  //       setMessage({
+  //         content,
+  //         object,
+  //       })
+  //     }
+  //   }
+  // }, [object])
 
   function setMessage(message: Partial<Message>, index?: number) {
     setMessages((previousMessages) => {
@@ -150,9 +165,9 @@ export default function Home() {
       return setAuthDialog(true)
     }
 
-    if (isLoading) {
-      stop()
-    }
+    // if (isLoading) {
+    //   stop()
+    // }
 
     const content: Message['content'] = [{ type: 'text', text: chatInput }]
     const images = await toMessageImage(files)
@@ -169,11 +184,7 @@ export default function Home() {
     })
 
     submit({
-      userID: session?.user?.id,
       messages: toAISDKMessages(updatedMessages),
-      template: currentTemplate,
-      model: currentModel,
-      config: languageModel,
     })
 
     setChatInput('')
@@ -188,11 +199,7 @@ export default function Home() {
 
   function retry() {
     submit({
-      userID: session?.user?.id,
       messages: toAISDKMessages(messages),
-      template: currentTemplate,
-      model: currentModel,
-      config: languageModel,
     })
   }
 
@@ -313,7 +320,7 @@ export default function Home() {
             />
           </ChatInput>
         </div>
-        <Preview
+        {/* <Preview
           apiKey={apiKey}
           selectedTab={currentTab}
           onSelectedTabChange={setCurrentTab}
@@ -322,7 +329,7 @@ export default function Home() {
           fragment={fragment}
           result={result as ExecutionResult}
           onClose={() => setFragment(undefined)}
-        />
+        /> */}
       </div>
     </main>
   )
