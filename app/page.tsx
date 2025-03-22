@@ -38,23 +38,13 @@ export default function Home() {
   
   useEffect(() => {
 
-    mcps.servers.forEach(server => {
-      addMcp(server)
-    })
-
-    // Check if postgres server already exists
-    const hasPostgres = mcps.servers.some(server => 
-      server.name?.toLowerCase().includes('postgres')
-    );
-
-    // Only add postgres if it's not already present
-    if (!hasPostgres) {
+    
       addMcp({
         name: 'postgres',
         command: 'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
         envs: {},
       });
-    }
+      
   }, [])
 
   const [chatInput, setChatInput] = useLocalStorage('chat', '')

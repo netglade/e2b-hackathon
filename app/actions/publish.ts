@@ -55,6 +55,17 @@ export async function addMcp(server: {
     state: 'loading',
     url: undefined,
   }
+
+  // Check if a postgres server already exists
+  const existingPostgres = mcps.servers.find(s => 
+    s.name?.toLowerCase().includes(server.name.toLowerCase())
+  );
+
+  if (existingPostgres) {
+    console.log('Server already exists');
+    return;
+  }
+
   mcps.servers.push(serverToAdd)
 
   startServer(serverToAdd.command, serverToAdd.envs, serverToAdd.id)
