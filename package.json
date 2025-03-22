@@ -40,6 +40,7 @@
     "clsx": "^2.1.1",
     "core-js": "^3.38.0",
     "lucide-react": "^0.396.0",
+    "mcp-proxy": "^2.11.0",
     "next": "^14.2.21",
     "next-themes": "^0.3.0",
     "ollama-ai-provider": "^1.2.0",

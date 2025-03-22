@@ -10,46 +10,24 @@ async function main() {
       template: "node",
     });
 
-    // Read the demo server code
-    console.log("Reading demo server code...");
-    const demoServerCode = await fs.readFile("./demo-server.js", "utf-8");
+    console.log("Installing mcp-proxy...");
+    await sandbox.commands.run("npm install mcp-proxy");
 
-    // Install required dependencies in the sandbox
-    console.log("Installing dependencies...");
+    // Upload and replace the SSE server file
+    //console.log("Replacing SSE server file...");
+    const serverContent = await fs.readFile("./startSSEServer.ts", "utf-8");
+    await sandbox.files.remove("/home/user/node_modules/mcp-proxy/src/startSSEServer.ts");
+    //await sandbox.files.write("/home/user/node_modules/mcp-proxy/src/startSSEServer.ts", serverContent);
 
-    // Write the demo server code to a file in the sandbox
-    console.log("Writing server code to sandbox...");
-    await sandbox.files.write("/app/demo-server.js", demoServerCode);
-
-    // Check Node.js version
-    console.log("Checking Node.js version...");
-    const versionProcess = await sandbox.commands.run("node --version");
-    console.log("Node.js version:", versionProcess.stdout);
-
-    // Create package.json to ensure ES modules are enabled
-    await sandbox.files.write("/app/package.json", JSON.stringify({
-      "type": "module",
-      "dependencies": {
-        "@e2b/code-interpreter": "^1.0.4",
-        "@modelcontextprotocol/sdk": "^1.7.0",
-        "dotenv": "^16.4.7",
-        "express": "^5.0.1",
-        "zod": "^3.22.4"
-      },
-    }));
-
-    const installProcess = await sandbox.commands.run("cd /app && npm i", {
-      timeoutMs: 120000,
-    });
-    console.log("Install process output:", installProcess.stdout);
-
-    // Run the demo server in background
-    console.log("Starting server...");
+    const files = await sandbox.files.list("/home/user/node_modules/.bin");
+    console.log(files);
     
-    const process = await sandbox.commands.run("node /app/demo-server.js", { background: true });
+    console.log("Starting server...");
+    const mcpCommand = 'npx @modelcontextprotocol/server-postgres "postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"';
+    const process = await sandbox.commands.run(`npx mcp-proxy --port 3000 ${mcpCommand}`, { background: true });
 
     // Get the host for port 3000 (default port for the inspector)
-    const host = sandbox.getHost(3001);
+    const host = sandbox.getHost(3000);
     const url = `https://${host}`;
     console.log("Server started at:", url);
 
