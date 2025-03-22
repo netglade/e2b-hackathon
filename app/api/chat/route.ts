@@ -70,22 +70,13 @@ export async function POST(req: Request) {
   //  return stream.toTextStreamResponse()
   let clientOne: any
   try {
-    // Initialize an MCP client to connect to a `stdio` MCP server:
-    const transport = new Experimental_StdioMCPTransport({
-      command: 'node',
-      args: ['./app/api/servers/stdio/calculator.js'],
-    })
-    clientOne = await experimental_createMCPClient({
-      transport,
-    })
 
-    // Alternatively, you can connect to a Server-Sent Events (SSE) MCP server:
-    //clientTwo = await experimental_createMCPClient({
-    //  transport: {
-    //    type: 'sse',
-    //    url: 'http://localhost:3000/sse',
-    //  },
-    //});
+    const clientOne = await experimental_createMCPClient({
+      transport: {
+        type: 'sse',
+        url: 'https://3000-iccj2mdne89kx7p0drf2c-ae3f52e0.e2b.dev/sse',
+      },
+    });
 
     // Similarly to the stdio example, you can pass in your own custom transport as long as it implements the `MCPTransport` interface:
     //const transport = new MyCustomTransport({
@@ -107,7 +98,7 @@ export async function POST(req: Request) {
     const response = await generateText({
       model: openai('gpt-4o'),
       tools,
-      maxSteps: 10,
+      maxSteps: 20,
       messages,
     })
 
