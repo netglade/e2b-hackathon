@@ -1,22 +1,28 @@
-import { v4 as uuidv4 } from 'uuid';
-
 export interface McpServer {
-    name: string,
-    command: string,
-    apiKey: string | undefined,
-    id: string 
+  name: string
+  command: string
+  apiKey: string | undefined
+  id: string
+  url: string | undefined
 }
 
 export interface Mcps {
   servers: McpServer[]
 }
 
-
 declare global {
   var mcpsInstance: Mcps | undefined
 }
 
-const mcps = global.mcpsInstance || { servers: [] }
+const mcps = global.mcpsInstance || {
+  servers: [
+    {
+      command:
+        'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
+      name: 'postgres',
+    },
+  ],
+}
 
 console.log(mcps)
 
