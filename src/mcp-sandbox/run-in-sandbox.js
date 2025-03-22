@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Sandbox } from "@e2b/code-interpreter";
 
-async function runMCPInSandbox(mcpCommand, envs) {
+export async function runMCPInSandbox(mcpCommand, envs) {
   // Create a new sandbox with Node.js runtime
   console.log("Creating sandbox...");
   const sandbox = await Sandbox.create({
