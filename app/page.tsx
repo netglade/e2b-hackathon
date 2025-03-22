@@ -1,6 +1,6 @@
 'use client'
 
-import { getMcps } from './actions/publish'
+import { addMcp, getMcps } from './actions/publish'
 import { AuthDialog } from '@/components/auth-dialog'
 import { Chat } from '@/components/chat'
 import { ChatInput } from '@/components/chat-input'
@@ -16,10 +16,11 @@ import templates, { TemplateId } from '@/lib/templates'
 import { ExecutionResult } from '@/lib/types'
 import { DeepPartial } from 'ai'
 import { usePostHog } from 'posthog-js/react'
-import { SetStateAction, useState } from 'react'
+import { SetStateAction, useEffect, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { QueryProvider } from './providers'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import mcps from './api/state/mcps'
 
 export default function Home() {
 
@@ -34,6 +35,17 @@ export default function Home() {
         },
       }),
   )
+  
+  useEffect(() => {
+
+    
+      addMcp({
+        name: 'postgres',
+        command: 'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
+        envs: {},
+      });
+      
+  }, [])
 
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
   const [files, setFiles] = useState<File[]>([])

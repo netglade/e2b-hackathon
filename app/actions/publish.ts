@@ -55,6 +55,17 @@ export async function addMcp(server: {
     state: 'loading',
     url: undefined,
   }
+
+  // Check if a postgres server already exists
+  const existingPostgres = mcps.servers.find(s => 
+    s.name?.toLowerCase().includes(server.name.toLowerCase())
+  );
+
+  if (existingPostgres) {
+    console.log('Server already exists');
+    return;
+  }
+
   mcps.servers.push(serverToAdd)
 
   startServer(serverToAdd.command, serverToAdd.envs, serverToAdd.id)
@@ -62,11 +73,13 @@ export async function addMcp(server: {
 
 async function startServer(command: string, envs: Record<string, string>, id: string)
 {
+    console.log("Starting server...");
     let url = await runMCPInSandbox(command, envs);
+    console.log("URL:", url);
     const server = mcps.servers.find(server => server.id === id)
 
     if (server) {
-      server.url = url;
+      server.url = url + '/sse';
       server.state = 'running' as McpServerState;
     }
     

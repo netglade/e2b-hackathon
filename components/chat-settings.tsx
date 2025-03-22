@@ -16,18 +16,18 @@ import {
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
-// Import Textarea component
-import { addMcp, getMcps, removeMcp } from '@/app/actions/publish'
-import { LLMModelConfig } from '@/lib/models'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { HammerIcon, PlusIcon, TrashIcon } from 'lucide-react'
-import { useState } from 'react'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip'
+// Import Textarea component
+import { addMcp, getMcps, removeMcp } from '@/app/actions/publish'
+import { LLMModelConfig } from '@/lib/models'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { HammerIcon, LoaderCircle, PlusIcon, TrashIcon } from 'lucide-react'
+import { useState } from 'react'
 
 export function ChatSettings({
   apiKeyConfigurable,
@@ -172,10 +172,21 @@ export function ChatSettings({
                     {mcps.servers.map((server) => (
                       <li
                         key={server.id}
-                        className="text-sm py-1 px-1 rounded cursor-pointer hover:bg-accent"
+                        className="text-sm py-1 px-1 rounded cursor-pointer hover:bg-accent flex items-center justify-between"
                         onClick={() => handleOpenTool(server)}
                       >
-                        {server.name}
+                        <span>{server.name}</span>
+                        {server.state === 'loading' ? (
+                          <LoaderCircle className="h-3 w-3 animate-spin ml-2" />
+                        ) : (
+                          <div
+                            className={`w-2 h-2 rounded-full ml-2 ${
+                              server.state === 'running'
+                                ? 'bg-green-500'
+                                : 'bg-red-500'
+                            }`}
+                          />
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -205,20 +216,23 @@ export function ChatSettings({
                 <div>
                   <Label>Status</Label>
                   <div className="flex items-center mt-1">
-                    <div
-                      className={`w-2 h-2 rounded-full mr-2 ${
-                        selectedTool.state === 'running'
-                          ? 'bg-green-500'
-                          : selectedTool.state === 'stopped'
-                            ? 'bg-gray-500'
-                            : selectedTool.state === 'starting'
-                              ? 'bg-yellow-500'
-                              : selectedTool.state === 'stopping'
-                                ? 'bg-orange-500'
-                                : 'bg-red-500'
-                      }`}
-                    ></div>
-                    <span className="capitalize">{selectedTool.state}</span>
+                    {selectedTool.state === 'loading' ? (
+                      <>
+                        <LoaderCircle className="h-3 w-3 animate-spin mr-2" />
+                        <span className="capitalize">{selectedTool.state}</span>
+                      </>
+                    ) : (
+                      <>
+                        <div
+                          className={`w-2 h-2 rounded-full mr-2 ${
+                            selectedTool.state === 'running'
+                              ? 'bg-green-500'
+                              : 'bg-red-500'
+                          }`}
+                        />
+                        <span className="capitalize">{selectedTool.state}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
