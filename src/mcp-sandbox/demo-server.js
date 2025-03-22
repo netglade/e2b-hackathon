@@ -1,5 +1,6 @@
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import express from "express";
 import { z } from "zod";
 
 const server = new McpServer({
@@ -40,6 +41,22 @@ server.prompt(
   })
 );
 
-// Start receiving messages on stdin and sending messages on stdout
-const transport = new StdioServerTransport();
-await server.connect(transport);
+// const transport = new StdioServerTransport();
+// await server.connect(transport);
+
+const app = express();
+
+let transport = null;
+app.get("/sse", async (req, res) => {
+  transport = new SSEServerTransport("/messages", res);
+  await server.connect(transport);
+});
+
+app.post("/messages", async (req, res) => {
+  // Note: to support multiple simultaneous connections, these messages will
+  // need to be routed to a specific matching transport. (This logic isn't
+  // implemented here, for simplicity.)
+  await transport.handlePostMessage(req, res);
+});
+
+app.listen(3001);
