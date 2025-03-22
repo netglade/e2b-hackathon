@@ -17,16 +17,8 @@ const ratelimitWindow = process.env.RATE_LIMIT_WINDOW
 export async function POST(req: Request) {
   const {
     messages,
-    userID,
-    template,
-    model,
-    config,
   }: {
     messages: CoreMessage[]
-    userID: string
-    template: Templates
-    model: LLMModel
-    config: LLMModelConfig
   } = await req.json()
 
   //  const limit = !config.apiKey
@@ -111,7 +103,9 @@ export async function POST(req: Request) {
 
     console.log(JSON.stringify(response.response.messages))
     console.log(response.text)
-    return new Response(JSON.stringify(response), {
+    return new Response(JSON.stringify({
+      text: response.text,
+    }), {
       headers: {
         'Content-Type': 'application/json',
       },
