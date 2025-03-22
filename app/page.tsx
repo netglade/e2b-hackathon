@@ -14,16 +14,13 @@ import { FragmentSchema } from '@/lib/schema'
 import { supabase } from '@/lib/supabase'
 import templates, { TemplateId } from '@/lib/templates'
 import { ExecutionResult } from '@/lib/types'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DeepPartial } from 'ai'
 import { usePostHog } from 'posthog-js/react'
 import { SetStateAction, useEffect, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import { QueryProvider } from './providers'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import mcps from './api/state/mcps'
 
 export default function Home() {
-
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -35,16 +32,14 @@ export default function Home() {
         },
       }),
   )
-  
-  useEffect(() => {
 
-    
-      addMcp({
-        name: 'postgres',
-        command: 'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
-        envs: {},
-      });
-      
+  useEffect(() => {
+    addMcp({
+      name: 'postgres',
+      command:
+        'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
+      envs: {},
+    })
   }, [])
 
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
@@ -112,15 +107,20 @@ export default function Home() {
 
       const data = await response.json()
 
-      console.log(data)
-
-      setResult(result)
-      setCurrentPreview({ fragment, result })
-      addMessage({
-        role: 'assistant',
-        toolCalls: data.toolCalls,
-        content: [{ type: 'text', text: data.text }],
-      })
+      if (response.status !== 200) {
+        addMessage({
+          role: 'assistant',
+          content: [{ type: 'text', text: "Ups, something went wrong..." }],
+        })
+      } else {
+        setResult(result)
+        setCurrentPreview({ fragment, result })
+        addMessage({
+          role: 'assistant',
+          toolCalls: data.toolCalls,
+          content: [{ type: 'text', text: data.text }],
+        })
+      }
       // setCurrentTab('fragment')
       // setIsPreviewLoading(false)
     } catch (err: any) {

@@ -53,6 +53,7 @@ export function ChatSettings({
   const { data: mcps, isLoading } = useQuery({
     queryKey: ['mcps'],
     queryFn: () => getMcps(),
+    refetchInterval: 3000,
   })
 
   // Remove tool mutation
