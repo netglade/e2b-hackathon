@@ -25,8 +25,8 @@ const mcps = global.mcpsInstance || {
 
 console.log(mcps)
 
-if (process.env.NODE_ENV !== 'production') {
-  global.mcpsInstance = mcps
-}
+// if (process.env.NODE_ENV !== 'production') {
+// }
+global.mcpsInstance = mcps
 
 export default mcps
