@@ -24,11 +24,11 @@ const mcps = global.mcpsInstance || {
     {
       command:
         'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
-      envs: {},
+      envs: {} as Record<string, string>,
       name: 'postgres',
-      state: 'loading',
+      state: 'loading' as McpServerState,
       id: uuidv4(),
-      url: undefined,
+      url: undefined as string | undefined,
     },
   ],
 }
