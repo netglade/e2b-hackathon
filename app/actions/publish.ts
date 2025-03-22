@@ -1,6 +1,6 @@
 'use server'
 
-import mcps from '../api/state/mcps'
+import mcps, { McpServer } from '../api/state/mcps'
 import { Duration, ms } from '@/lib/duration'
 import { Sandbox } from '@e2b/code-interpreter'
 import { kv } from '@vercel/kv'
@@ -43,6 +43,7 @@ export async function removeMcp(id: string) {
   mcps.servers = mcps.servers.filter((server) => server.id !== id)
 }
 
-export async function addMcp(name: string) {
-  mcps.servers.push({ name, id: uuidv4() })
+export async function addMcp(server: McpServer) {
+  server.id = uuidv4()
+  mcps.servers.push(server)
 }
