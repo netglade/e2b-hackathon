@@ -1,12 +1,11 @@
 'use server'
 
-import mcps, { McpServer } from '../api/state/mcps'
+import mcps, { McpServer, McpServerState } from '../api/state/mcps'
 import { Duration, ms } from '@/lib/duration'
-import { Sandbox } from '@e2b/code-interpreter'
 import { kv } from '@vercel/kv'
 import { customAlphabet } from 'nanoid'
-import { v4 as uuidv4 } from 'uuid';
-
+import { v4 as uuidv4 } from 'uuid'
+import { Sandbox } from "@e2b/code-interpreter";
 
 const nanoid = customAlphabet('1234567890abcdef', 7)
 
@@ -43,10 +42,62 @@ export async function removeMcp(id: string) {
   mcps.servers = mcps.servers.filter((server) => server.id !== id)
 }
 
-export async function addMcp(server: McpServer) {
-  server.id = uuidv4()
-  server.state = 'loading'
-  mcps.servers.push(server)
+export async function addMcp(server: {
+  name: string
+  command: string
+  envs: Record<string, string>
+}) {
+  let serverToAdd: McpServer = {
+    name: server.name,
+    command: server.command,
+    envs: server.envs,
+    id: uuidv4(),
+    state: 'loading',
+    url: undefined,
+  }
+  mcps.servers.push(serverToAdd)
 
-  
+  startServer(serverToAdd.command, serverToAdd.envs, serverToAdd.id)
+}
+
+async function startServer(command: string, envs: Record<string, string>, id: string)
+{
+    let url = await runMCPInSandbox(command, envs);
+    const server = mcps.servers.find(server => server.id === id)
+
+    if (server) {
+      server.url = url;
+      server.state = 'running' as McpServerState;
+    }
+    
+}
+
+async function runMCPInSandbox(mcpCommand: string, envs: Record<string, string>) {
+  // Create a new sandbox with Node.js runtime
+  console.log("Creating sandbox...");
+  const sandbox = await Sandbox.create({
+    template: "node",
+    timeoutMs: 1000 * 60 * 10,
+  });
+
+  const host = sandbox.getHost(3000);
+  const url = `https://${host}`;
+  console.log("Server started at:", url);
+
+  console.log("Starting server...");
+  const process = await sandbox.commands.run(
+    `npx -y supergateway --base-url ${url} --port 3000 --stdio "${mcpCommand}"`,
+    {
+      envs: envs,
+      background: true,
+      onStdout: (data) => {
+        console.log(data);
+      },
+      onStderr: (data) => {
+        console.log(data);
+      }
+    }
+  );
+
+  return url;
 }

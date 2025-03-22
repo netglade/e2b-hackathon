@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Sandbox } from "@e2b/code-interpreter";
 
-async function runMCPInSandbox(mcpCommand) {
+export async function runMCPInSandbox(mcpCommand, envs) {
   // Create a new sandbox with Node.js runtime
   console.log("Creating sandbox...");
   const sandbox = await Sandbox.create({
@@ -17,6 +17,7 @@ async function runMCPInSandbox(mcpCommand) {
   const process = await sandbox.commands.run(
     `npx -y supergateway --base-url ${url} --port 3000 --stdio "${mcpCommand}"`,
     {
+      envs: envs,
       background: true,
       onStdout: (data) => {
         console.log(data);

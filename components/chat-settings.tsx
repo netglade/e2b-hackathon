@@ -15,17 +15,19 @@ import {
 } from './ui/dropdown-menu'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
+import { Textarea } from './ui/textarea'
+// Import Textarea component
+import { addMcp, getMcps, removeMcp } from '@/app/actions/publish'
+import { LLMModelConfig } from '@/lib/models'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { HammerIcon, PlusIcon, TrashIcon } from 'lucide-react'
+import { useState } from 'react'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip'
-import { addMcp, getMcps, removeMcp } from '@/app/actions/publish'
-import { LLMModelConfig } from '@/lib/models'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { HammerIcon, PlusIcon, TrashIcon } from 'lucide-react'
-import { useState } from 'react'
 
 export function ChatSettings({
   apiKeyConfigurable,
@@ -42,9 +44,9 @@ export function ChatSettings({
   const [selectedTool, setSelectedTool] = useState<McpServer | null>(null)
   const [newToolName, setNewToolName] = useState('')
   const [newToolCommand, setNewToolCommand] = useState('')
-  const [newToolApiKey, setNewToolApiKey] = useState<string | undefined>(
-    undefined,
-  )
+  const [newToolEnvs, setNewToolEnvs] = useState<Record<string, string>>({})
+  const [newEnvKey, setNewEnvKey] = useState('')
+  const [newEnvValue, setNewEnvValue] = useState('')
   const queryClient = useQueryClient()
 
   // Fetch tools list using React Query
@@ -62,6 +64,25 @@ export function ChatSettings({
       setSelectedTool(null)
     },
   })
+
+  const handleAddEnv = () => {
+    if (newEnvKey.trim() && newEnvValue.trim()) {
+      setNewToolEnvs((prev) => ({
+        ...prev,
+        [newEnvKey]: newEnvValue,
+      }))
+      setNewEnvKey('')
+      setNewEnvValue('')
+    }
+  }
+
+  const handleRemoveEnv = (key: string) => {
+    setNewToolEnvs((prev) => {
+      const updated = { ...prev }
+      delete updated[key]
+      return updated
+    })
+  }
 
   // Add tool mutation
   const addMutation = useMutation({
@@ -82,7 +103,9 @@ export function ChatSettings({
     setSelectedTool(null)
     setNewToolName('')
     setNewToolCommand('')
-    setNewToolApiKey(undefined)
+    setNewToolEnvs({})
+    setNewEnvKey('')
+    setNewEnvValue('')
     setIsOpen(true)
   }
 
@@ -99,7 +122,7 @@ export function ChatSettings({
       addMutation.mutate({
         name: newToolName,
         command: newToolCommand,
-        apiKey: newToolApiKey,
+        envs: newToolEnvs,
       })
     }
   }
@@ -175,26 +198,64 @@ export function ChatSettings({
             <>
               <DialogHeader>
                 <DialogTitle>{selectedTool.name}</DialogTitle>
+                <DialogDescription>MCP tool</DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4 py-4">
                 <div>
+                  <Label>Status</Label>
+                  <div className="flex items-center mt-1">
+                    <div
+                      className={`w-2 h-2 rounded-full mr-2 ${
+                        selectedTool.state === 'running'
+                          ? 'bg-green-500'
+                          : selectedTool.state === 'stopped'
+                            ? 'bg-gray-500'
+                            : selectedTool.state === 'starting'
+                              ? 'bg-yellow-500'
+                              : selectedTool.state === 'stopping'
+                                ? 'bg-orange-500'
+                                : 'bg-red-500'
+                      }`}
+                    ></div>
+                    <span className="capitalize">{selectedTool.state}</span>
+                  </div>
+                </div>
+
+                <div>
                   <Label>Command</Label>
-                  <Input
+                  <Textarea
                     value={selectedTool.command}
                     readOnly
-                    className="mt-1 bg-muted"
+                    className="mt-1 bg-muted font-mono text-sm resize-none"
+                    rows={Math.min(
+                      8,
+                      (selectedTool.command.match(/\n/g) || []).length + 1,
+                    )}
                   />
                 </div>
 
                 <div>
-                  <Label>API Key</Label>
-                  <Input
-                    value={selectedTool.apiKey || 'Not set'}
-                    readOnly
-                    className="mt-1 bg-muted"
-                    type="password"
-                  />
+                  <Label>Environment Variables</Label>
+                  {Object.keys(selectedTool.envs).length > 0 ? (
+                    <div className="mt-1 border rounded-md divide-y">
+                      {Object.entries(selectedTool.envs).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="px-3 py-2 flex justify-between items-center"
+                        >
+                          <span className="font-mono text-xs">{key}</span>
+                          <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                            ••••••
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      No environment variables
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -238,28 +299,73 @@ export function ChatSettings({
 
                   <div>
                     <Label htmlFor="toolCommand">Command</Label>
-                    <Input
+                    <Textarea
                       id="toolCommand"
                       value={newToolCommand}
                       onChange={(e) => setNewToolCommand(e.target.value)}
                       placeholder="Enter tool command"
-                      className="mt-1"
+                      className="mt-1 font-mono text-sm resize-none"
+                      rows={Math.min(
+                        8,
+                        (newToolCommand.match(/\n/g) || []).length + 1,
+                      )}
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="toolApiKey">API Key (Optional)</Label>
-                    <Input
-                      id="toolApiKey"
-                      value={newToolApiKey || ''}
-                      onChange={(e) =>
-                        setNewToolApiKey(e.target.value || undefined)
-                      }
-                      placeholder="Enter API key if needed"
-                      className="mt-1"
-                      type="password"
-                    />
+                    <Label>Environment Variables</Label>
+                    {Object.keys(newToolEnvs).length > 0 && (
+                      <div className="mt-2 mb-3 border rounded-md divide-y">
+                        {Object.entries(newToolEnvs).map(([key, value]) => (
+                          <div
+                            key={key}
+                            className="px-3 py-2 flex justify-between items-center"
+                          >
+                            <span className="font-mono text-xs">{key}</span>
+                            <div className="flex items-center">
+                              <span className="font-mono text-xs mr-2">
+                                ••••••
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5"
+                                onClick={() => handleRemoveEnv(key)}
+                              >
+                                <TrashIcon className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Key"
+                        value={newEnvKey}
+                        onChange={(e) => setNewEnvKey(e.target.value)}
+                        className="text-xs font-mono"
+                      />
+                      <Input
+                        placeholder="Value"
+                        value={newEnvValue}
+                        onChange={(e) => setNewEnvValue(e.target.value)}
+                        className="text-xs"
+                        type="password"
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        onClick={handleAddEnv}
+                        disabled={!newEnvKey.trim() || !newEnvValue.trim()}
+                        className="shrink-0"
+                      >
+                        <PlusIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
