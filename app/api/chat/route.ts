@@ -6,6 +6,8 @@ import ratelimit from '@/lib/ratelimit'
 import { fragmentSchema as schema } from '@/lib/schema'
 import { Templates } from '@/lib/templates'
 import { streamObject, LanguageModel, CoreMessage } from 'ai'
+import { Experimental_StdioMCPTransport } from 'ai/mcp-stdio';
+
 
 export const maxDuration = 60
 
