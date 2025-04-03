@@ -6,6 +6,7 @@ import { kv } from '@vercel/kv'
 import { customAlphabet } from 'nanoid'
 import { v4 as uuidv4 } from 'uuid'
 import { Sandbox } from "@e2b/code-interpreter";
+import { startMcpSandbox } from "@netglade/mcp-sandbox";
 
 const nanoid = customAlphabet('1234567890abcdef', 7)
 
@@ -47,6 +48,12 @@ export async function addMcp(server: {
   command: string
   envs: Record<string, string>
 }) {
+  console.log('Adding new server:', {
+    name: server.name,
+    command: server.command,
+    envs: server.envs
+  });
+
   let serverToAdd: McpServer = {
     name: server.name,
     command: server.command,
@@ -62,7 +69,7 @@ export async function addMcp(server: {
   );
 
   if (existingPostgres) {
-    console.log('Server already exists');
+    console.log('Server already exists:', existingPostgres);
     return;
   }
 
@@ -74,43 +81,53 @@ export async function addMcp(server: {
 async function startServer(command: string, envs: Record<string, string>, id: string)
 {
     console.log("Starting server...");
-    let url = await runMCPInSandbox(command, envs);
-    console.log("URL:", url);
+    //let url = await runMCPInSandbox(command, envs);
+    //console.log("URL:", url);
+
+    const sandbox = await startMcpSandbox({
+      command: command,
+      apiKey: process.env.E2B_API_KEY!,
+      envs: envs,
+      timeoutMs: 1000 * 60 * 10,
+    })
+    
+    const url = sandbox.getUrl();
+
     const server = mcps.servers.find(server => server.id === id)
 
     if (server) {
-      server.url = url + '/sse';
+      server.url = url;
       server.state = 'running' as McpServerState;
     }
     
 }
 
-async function runMCPInSandbox(mcpCommand: string, envs: Record<string, string>) {
-  // Create a new sandbox with Node.js runtime
-  console.log("Creating sandbox...");
-  const sandbox = await Sandbox.create({
-    template: "node",
-    timeoutMs: 1000 * 60 * 10,
-  });
+// async function runMCPInSandbox(mcpCommand: string, envs: Record<string, string>) {
+//   // Create a new sandbox with Node.js runtime
+//   console.log("Creating sandbox...");
+//   const sandbox = await Sandbox.create({
+//     template: "node",
+//     timeoutMs: 1000 * 60 * 10,
+//   });
 
-  const host = sandbox.getHost(3000);
-  const url = `https://${host}`;
-  console.log("Server started at:", url);
+//   const host = sandbox.getHost(3000);
+//   const url = `https://${host}`;
+//   console.log("Server started at:", url);
 
-  console.log("Starting server...");
-  const process = await sandbox.commands.run(
-    `npx -y supergateway --base-url ${url} --port 3000 --stdio "${mcpCommand}"`,
-    {
-      envs: envs,
-      background: true,
-      onStdout: (data) => {
-        console.log(data);
-      },
-      onStderr: (data) => {
-        console.log(data);
-      }
-    }
-  );
+//   console.log("Starting server...");
+//   const process = await sandbox.commands.run(
+//     `npx -y supergateway --base-url ${url} --port 3000 --stdio "${mcpCommand}"`,
+//     {
+//       envs: envs,
+//       background: true,
+//       onStdout: (data) => {
+//         console.log(data);
+//       },
+//       onStderr: (data) => {
+//         console.log(data);
+//       }
+//     }
+//   );
 
-  return url;
-}
+//   return url;
+// }

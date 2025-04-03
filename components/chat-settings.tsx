@@ -1,3 +1,4 @@
+import { McpServer } from '@/app/api/state/mcps'
 import { Button } from './ui/button'
 import {
   Dialog,
@@ -68,6 +69,10 @@ export function ChatSettings({
 
   const handleAddEnv = () => {
     if (newEnvKey.trim() && newEnvValue.trim()) {
+      console.log('Adding environment variable:', {
+        key: newEnvKey,
+        value: newEnvValue
+      });
       setNewToolEnvs((prev) => ({
         ...prev,
         [newEnvKey]: newEnvValue,
@@ -116,15 +121,22 @@ export function ChatSettings({
     }
   }
 
+  
   const handleAddTool = (e: React.FormEvent) => {
     e.preventDefault()
     if (newToolName.trim() && newToolCommand.trim()) {
       // Note: Update your addMcp function to accept these new parameters
+      // Log the actual values of the environment variables
+      Object.entries(newToolEnvs).forEach(([key, value]) => {
+        console.log(`  ${key}: ${value}`);
+      });
+
       addMutation.mutate({
         name: newToolName,
         command: newToolCommand,
         envs: newToolEnvs,
       })
+
     }
   }
 

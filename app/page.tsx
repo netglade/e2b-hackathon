@@ -34,12 +34,12 @@ export default function Home() {
   )
 
   useEffect(() => {
-    addMcp({
-      name: 'postgres',
-      command:
-        'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
-      envs: {},
-    })
+    // addMcp({
+    //   name: 'postgres',
+    //   command:
+    //     'npx @modelcontextprotocol/server-postgres postgresql://postgres.awlyjmwlluxpdrnpqnpi:utensils.buddha.EXPELLED@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
+    //   envs: {},
+    // })
   }, [])
 
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
