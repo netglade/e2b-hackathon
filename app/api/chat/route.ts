@@ -3,6 +3,10 @@ import { openai } from '@ai-sdk/openai'
 import { CoreMessage, experimental_createMCPClient, generateText } from 'ai'
 import { Experimental_StdioMCPTransport } from 'ai/mcp-stdio'
 import mcps from '../state/mcps'
+import { McpSandbox } from '@netglade/mcp-sandbox'
+import { setSandboxTimeout } from '@/app/actions/sandbox'
+import { McpServer, toPublicServer } from '@/app/api/state/mcps'
+import { extendOrRestartServer } from '@/app/actions/publish'
 
 export const maxDuration = 60
 
@@ -25,11 +29,22 @@ export interface ToolCall {
   id: string,
 }
 
-// Add interface for server type
-interface McpServer {
-  url: string;
-  command?: string;
-  name?: string;
+async function waitForServerReady(url: string, maxAttempts = 5): Promise<boolean> {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const response = await fetch(url);
+      if (response.status === 200) {
+        console.log(`Server ready at ${url} after ${i + 1} attempts`);
+        return true;
+      }
+      console.log(`Server not ready yet (attempt ${i + 1}), status: ${response.status}`);
+    } catch (error) {
+      console.log(`Server connection failed (attempt ${i + 1})`);
+    }
+    // Wait 2 seconds between attempts
+    await new Promise(resolve => setTimeout(resolve, 6000));
+  }
+  return false;
 }
 
 export async function POST(req: Request) {
@@ -78,36 +93,50 @@ export async function POST(req: Request) {
   //  return stream.toTextStreamResponse()
   let clients: any[] = []
   try {
-    const servers = mcps.servers as McpServer[] // Type assertion here
+    const servers = mcps.servers.map(toPublicServer);
+    const readyServers: typeof servers = [];
+    const needsInitialization: typeof servers = [];
 
+    // Phase 1: Check all servers, extend or restart as needed
+    console.log("Phase 1: Checking servers...");
     for (const server of servers) {
-
-      if (server.url) {
-        const client = await experimental_createMCPClient({
-          transport: {
-            type: 'sse',
-            url: server.url,
-          },
-        });
-
-        clients.push(client)
-      }
+        try {
+            const wasRestarted = await extendOrRestartServer(server.id);
+            if (wasRestarted) {
+                needsInitialization.push(server);
+            } else {
+                readyServers.push(server);
+            }
+        } catch (error) {
+            console.error(`Failed to handle server ${server.name}:`, error);
+            continue;
+        }
     }
-    
-    // const clientOne = await experimental_createMCPClient({
-    //   transport: {
-    //     type: 'sse',
-    //     url: 'https://3000-iccj2mdne89kx7p0drf2c-ae3f52e0.e2b.dev/sse',
-    //   },
-    // });
 
-    // Similarly to the stdio example, you can pass in your own custom transport as long as it implements the `MCPTransport` interface:
-    //const transport = new MyCustomTransport({
-    //  // ...
-    //});
-    //clientThree = await experimental_createMCPClient({
-    //  transport,
-    //});
+    // Phase 2: Wait for restarted servers to be ready
+    console.log("Phase 2: Waiting for restarted servers...");
+    for (const server of needsInitialization) {
+        if (server.url) {
+            const isReady = await waitForServerReady(server.url);
+            if (!isReady) {
+                console.log(`Server ${server.name} failed to initialize properly`);
+                continue;
+            }
+            readyServers.push(server);
+        }
+    }
+
+    // Phase 3: Create clients for all ready servers
+    console.log("Phase 3: Creating clients...");
+    for (const server of readyServers) {
+        const client = await experimental_createMCPClient({
+            transport: {
+                type: 'sse',
+                url: server.url!,
+            },
+        });
+        clients.push(client);
+    }
 
     let tools = {}
     for (const client of clients) {

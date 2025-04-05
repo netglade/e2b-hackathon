@@ -1,6 +1,6 @@
 'use server'
 
-import mcps, { McpServer, McpServerState } from '../api/state/mcps'
+import mcps, { McpServer, McpServerState, toPublicServer } from '../api/state/mcps'
 import { Duration, ms } from '@/lib/duration'
 import { kv } from '@vercel/kv'
 import { customAlphabet } from 'nanoid'
@@ -36,7 +36,9 @@ export async function publish(
 }
 
 export async function getMcps() {
-  return mcps
+  return {
+    servers: mcps.servers.map(toPublicServer)
+  }
 }
 
 export async function removeMcp(id: string) {
@@ -61,16 +63,7 @@ export async function addMcp(server: {
     id: uuidv4(),
     state: 'loading',
     url: undefined,
-  }
-
-  // Check if a postgres server already exists
-  const existingPostgres = mcps.servers.find(s => 
-    s.name?.toLowerCase().includes(server.name.toLowerCase())
-  );
-
-  if (existingPostgres) {
-    console.log('Server already exists:', existingPostgres);
-    return;
+    sandbox: undefined,
   }
 
   mcps.servers.push(serverToAdd)
@@ -81,8 +74,6 @@ export async function addMcp(server: {
 async function startServer(command: string, envs: Record<string, string>, id: string)
 {
     console.log("Starting server...");
-    //let url = await runMCPInSandbox(command, envs);
-    //console.log("URL:", url);
 
     const sandbox = await startMcpSandbox({
       command: command,
@@ -98,36 +89,50 @@ async function startServer(command: string, envs: Record<string, string>, id: st
     if (server) {
       server.url = url;
       server.state = 'running' as McpServerState;
+      server.sandbox = sandbox;
     }
     
 }
 
-// async function runMCPInSandbox(mcpCommand: string, envs: Record<string, string>) {
-//   // Create a new sandbox with Node.js runtime
-//   console.log("Creating sandbox...");
-//   const sandbox = await Sandbox.create({
-//     template: "node",
-//     timeoutMs: 1000 * 60 * 10,
-//   });
+export async function extendOrRestartServer(serverId: string): Promise<boolean> {
+  const server = mcps.servers.find(server => server.id === serverId);
+  if (!server) {
+    throw new Error(`Server not found: ${serverId}`);
+  }
 
-//   const host = sandbox.getHost(3000);
-//   const url = `https://${host}`;
-//   console.log("Server started at:", url);
+  // Check if server is running
+  if (server.sandbox) {
+    const isRunning = await server.sandbox.sandbox.isRunning();
+    if (isRunning) {
+      // Extend timeout if server is running
+      await server.sandbox.sandbox.setTimeout(300_000);
+      console.log("Server is running, timeout extended:", server.url);
+      return false; // Not restarted
+    }
+    console.log("Server stopped, restarting...");
+  }
 
-//   console.log("Starting server...");
-//   const process = await sandbox.commands.run(
-//     `npx -y supergateway --base-url ${url} --port 3000 --stdio "${mcpCommand}"`,
-//     {
-//       envs: envs,
-//       background: true,
-//       onStdout: (data) => {
-//         console.log(data);
-//       },
-//       onStderr: (data) => {
-//         console.log(data);
-//       }
-//     }
-//   );
-
-//   return url;
-// }
+  // Server not running, restart it
+  try {
+    const sandbox = await startMcpSandbox({
+      command: server.command,
+      apiKey: process.env.E2B_API_KEY!,
+      envs: server.envs,
+      timeoutMs: 1000 * 60 * 10,
+    });
+    
+    const newUrl = sandbox.getUrl();
+    
+    // Update server with new sandbox and URL
+    server.url = newUrl;
+    server.sandbox = sandbox;
+    server.state = 'running' as McpServerState;
+    
+    console.log("Server restarted successfully:", newUrl);
+    return true; // Was restarted
+  } catch (error) {
+    console.error("Failed to restart server:", error);
+    server.state = 'error' as McpServerState;
+    throw error; // Propagate the error
+  }
+}

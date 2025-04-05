@@ -1,8 +1,18 @@
-import { v4 as uuidv4 } from 'uuid'
+import { McpSandbox } from '@netglade/mcp-sandbox'
 
-export type McpServerState = 'loading' | 'running' | 'error'
-
+// Backend interface with sandbox
 export interface McpServer {
+  name: string
+  command: string
+  envs: Record<string, string>
+  id: string
+  url: string | undefined
+  state: McpServerState
+  sandbox?: McpSandbox
+}
+
+// Frontend interface without sandbox
+export interface McpServerPublic {
   name: string
   command: string
   envs: Record<string, string>
@@ -11,8 +21,16 @@ export interface McpServer {
   state: McpServerState
 }
 
+export type McpServerState = 'loading' | 'running' | 'error'
+
 export interface Mcps {
   servers: McpServer[]
+}
+
+// Helper function to convert to frontend-safe version
+export function toPublicServer(server: McpServer): McpServerPublic {
+  const { sandbox, ...publicServer } = server
+  return publicServer
 }
 
 declare global {
